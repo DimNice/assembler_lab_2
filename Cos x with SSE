@@ -1,0 +1,53 @@
+%include "io64.inc"
+%include "io64_float.inc"
+section .rodata
+n: dd 100
+section .text
+global CMAIN
+CMAIN:
+    mov rbp, rsp; for correct debugging 
+    READ_DOUBLE xmm7              ; xmm7 - хранит x,который вписали
+    mov r8,1
+    cvtsi2sd xmm9, r8              ; xmm9 - ИТОГ (изначально 1, т к ряд с единицы начинается всегда)
+    mov r13,1
+    mov r12,2
+    mov r11, -1
+    mov r10, 1
+    cvtsi2sd xmm10, r11
+    Cos:                          ; Cos - ряд 
+        xor r9,r9
+        mov r9,1
+        cvtsi2sd xmm3, r8          ; xmm3 - записываю 1, потому что факториал считается от единицы
+        Fact:                      ; подсчет факториала от 1(r9) до r12( 2*n)
+            cvtsi2sd xmm4, r9      ; xmm4 - перевод числа в вещественное для умножения
+            mulsd xmm3, xmm4       ; xmm3 - итоговое значение факториала для одного слагаемого
+            inc r9
+            cmp r9d, r12d
+            jbe Fact
+        movsd xmm8, xmm7             ; заношу x в регистр xmm8
+        XinPower:                    ; возведение в степень идет от 1(r9) до r12( 2*n)
+            mulsd xmm8, xmm7         ; xmm8 -  итоговое значение x в степени 2*n для одного слагаемого
+            inc r10
+            cmp r10d, r12d
+            jl XinPower
+        mov r10,0  
+        movsd xmm11, xmm10  
+        OneinPower:                    ; возведение в степень идет от 1(r9) до r13 (n)
+            mulsd xmm11, xmm10         ; xmm11 -  итоговое значение (-1) в степени n для одного слагаемого
+            inc r10
+            cmp r10d, r13d
+            jbe OneinPower    
+        divsd xmm8,xmm3
+        mulsd xmm8,xmm11
+        addsd xmm9,xmm8
+        inc r13
+        xor r12,r12
+        add r12, r13
+        add r12, r13
+        mov r10, 1
+        cmp r13d,[n]
+        jle Cos
+    PRINT_DOUBLE xmm9
+    xor rax,rax
+    xor eax,eax
+    ret
