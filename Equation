@@ -1,30 +1,34 @@
 %include "io64.inc"
 %include "io64_float.inc"
 section .bss
-tmp: resq 1
+t: resq 1
 a: resq 1
 b: resq 1
 x: resq 1
 section .text
 global CMAIN
 CMAIN:
-    mov rbp, rsp; for correct debugging
+    ;mov rbp, rsp; for correct debugging
+    ;mov rax, __float64__(2.0)
+    ;mov qword[a], rax
+    ;mov rax, __float64__(2.0)
+    ;mov qword[b], rax
     READ_DOUBLE [a]
-    READ_DOUBLE [b] 
+    READ_DOUBLE [b]
+    mov rax, __float64__(2.0)
+    mov qword[t], rax
     fninit                      ;сопроцессор
-    fld1                        ;заносим в стек 1
-    fld qword[b]                ;заносим в стек b
-    fprem                       ;Вещественный остаток от деления
-    f2xm1                       ;Возведение в степень
-    fld1                        ;заносим в стек 1
-    fadd
-    fstp qword[tmp]             ;сохраняет значение на вершине стека, дополнительно выталкивает значение из вершины стека
-    finit
-    fld qword[b]        
-    fld1
-    fscale                      ;;Возведение в степень
-    fld qword[tmp]
-    fmul
+    FLD qword[b]
+    FLD qword[t]
+    FYL2X ;вычисляем показатель
+    FLD1 ;загружаем +1.0 в стек
+    FLD ST1 ;дублируем показатель в стек
+    FPREM ;получаем дробную часть
+    F2XM1 ;возводим в дробную часть показателя
+    FADD ;прибавляем 1 из стека
+    FSCALE ;возводим в целую часть и умножаем
+    FSTP ST1 ; выталкиваем лишнее из вершины
+    ;fmul
     fld1                                ;заносим в стек 1
     fpatan                              ;считаем арктангенс
     fld qword[a]                        ;заносим в стек a
